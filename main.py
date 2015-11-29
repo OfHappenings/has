@@ -1,37 +1,42 @@
 import re
-import configparser
+import ConfigParser
 import os
 import datetime
 import time
 import json
 
 import requests
-from pushbullet import Pushbullet
+import twitter
 
 
 class HappeningDetector():
     def __init__(self):
 
-        self.config = configparser.ConfigParser()
+        self.config = ConfigParser.ConfigParser()
         self.config_paths = ['%s/config' % (os.getcwd())]
 
         for path in self.config_paths:
             if os.path.exists(path):
                 self.config.read(path)
 
-        self.api_key      = self.config.get('settings', 'api-key')
         self.pages        = int(self.config.get('settings', 'pages'))
         self.tripcodes    = self.config.get('settings', 'tripcodes').split(',')
         self.boards       = self.config.get('settings', 'boards').split(',')
         self.base_url     = self.config.get('settings', 'base_url')
-        self.channel_name = self.config.get('settings', "channel_name")
         self.update_interval = float(self.config.get('settings', 'update_interval'))
         self.seen_cache      = []
 
-        self.pb      = Pushbullet(self.api_key)
+        self.ck = self.config.get('settings', 'consumer-key')
+        self.cs = self.config.get('settings', 'consumer-secret')
+        self.atk = self.config.get('settings', 'access-token-key')
+        self.ats = self.config.get('settings', 'access-token-secret')
+
+        self.api          = twitter.Api(consumer_key=self.ck, 
+                                        consumer_secret=self.cs,
+                                        access_token_key=self.atk,
+                                        access_token_secret=self.ats)
         self.channel      = None
 
-        self.set_channel()    
 
 
     def update_seen_cache(self):
@@ -99,7 +104,7 @@ class HappeningDetector():
                             self.seen_cache.append(post['md5'])
                             self.write_cache()
 
-                            self.push(alert, thread_url)
+                            self.tweet(alert)
     
 
     def check_regex(self, text):
@@ -115,19 +120,11 @@ class HappeningDetector():
 
 
 
-    def push(self, message, url):
-        print('pushing: %s' % (message))
-        p = self.channel.push_link(message, url)
+    def tweet(self, message):
+        print('tweeting: %s' % (message))
+        status = self.api.PostUpdate(message)
 
 
-    def set_channel(self):
-        for channel in self.pb.channels:
-            if channel.name == self.channel_name:
-                self.channel = channel
-
-        if not self.channel:
-            print('Could not set the channel')
-            exit()
 
     def set_update_time(self):
         self.update_time = datetime.datetime.now() + datetime.timedelta(0, self.update_interval)

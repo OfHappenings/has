@@ -1,8 +1,11 @@
 [settings]
-api-key   = key_goes_here
+consumer-key = 
+consumer-secret = 
+access-token-key =  
+access-token-secret = 
+
 pages     = 3
-tripcodes = asdfasdf,asdfdkj,asdfjdfkj,
+tripcodes = !eKWyqwj.MA,
 boards    = pol,test
 base_url  = 8ch.net
-channel_name = some name
 update_interval = 120
