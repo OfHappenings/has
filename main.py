@@ -3,6 +3,7 @@ import configparser
 import os
 import datetime
 import time
+import json
 
 import requests
 from pushbullet import Pushbullet
@@ -25,11 +26,35 @@ class HappeningDetector():
         self.base_url     = self.config.get('settings', 'base_url')
         self.channel_name = self.config.get('settings', "channel_name")
         self.update_interval = float(self.config.get('settings', 'update_interval'))
+        self.seen_cache      = []
 
         self.pb      = Pushbullet(self.api_key)
         self.channel      = None
 
         self.set_channel()    
+
+
+    def update_seen_cache(self):
+        if not os.path.exists('cache'):
+            return 
+
+        with open('cache', 'r') as cache_file:
+            self.seen_cache = self.seen_cache + json.loads(cache_file.read())
+
+
+    def write_cache(self):
+        if not os.path.exists('cache'):
+            with open('cache', 'w') as cache_file:
+                cache_file.write(json.dumps(self.seen_cache))
+                return 
+
+        with open('cache', 'w') as cache_file:
+                try:
+                    cache_file.write(json.dumps(self.seen_cache + self.get_cache()))
+
+                except json.decoder.JSONDecodeError as e:
+                    cache_file.write(json.dumps(self.seen_cache))
+
 
 
     def iter_boards(self):
@@ -65,6 +90,14 @@ class HappeningDetector():
                         if r:
                             alert   = com.split('-- BEGIN ALERT --')[1].split(' -- END ALERT --')[0]
                             thread_url  = 'https://%s/%s/res/%s.html' % (self.base_url, board, post['no'])
+                            
+                            self.update_seen_cache()
+
+                            if post['md5'] in self.seen_cache:
+                                continue 
+
+                            self.seen_cache.append(post['md5'])
+                            self.write_cache()
 
                             self.push(alert, thread_url)
     
