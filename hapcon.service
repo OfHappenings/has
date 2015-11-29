@@ -1,0 +1,13 @@
+[Unit]
+Description=Happening Detector 
+After=network.target
+
+[Service]
+User=nobody
+WorkingDirectory=/etc/hapcon
+ExecStart=/usr/bin/python /etc/hapcon/main.py
+Restart=always
+
+
+[Install]
+WantedBy=multi-user.target
