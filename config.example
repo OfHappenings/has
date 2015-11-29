@@ -1,0 +1,8 @@
+[settings]
+api-key   = key_goes_here
+pages     = 3
+tripcodes = asdfasdf,asdfdkj,asdfjdfkj,
+boards    = pol,test
+base_url  = 8ch.net
+channel_name = some name
+update_interval = 120
